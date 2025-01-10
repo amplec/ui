@@ -1,0 +1,13 @@
+
+
+
+services:
+  ui:
+    container_name: ui
+    restart: unless-stopped
+    build:
+      context: .
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "80:80"
