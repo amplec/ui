@@ -11,3 +11,10 @@ services:
       - PYTHONUNBUFFERED=1
     ports:
       - "80:80"
+    networks:
+      - amplec
+
+networks:
+  amplec:
+    external: true
+      
