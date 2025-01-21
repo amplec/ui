@@ -6,11 +6,11 @@ st.set_page_config(layout="wide",page_title="Amplec - Chat", initial_sidebar_sta
 
 def show_settings_dialog():
     """
-    This will display a dialog for Regex & Submission ID settings
+    This will display a dialog for settings
     """
     
-    st.write("## ID & Regex Settings")
-    with st.form("regex_and_id_form"):
+    st.write("## Amplec Settings")
+    with st.form("settings_form"):
         st.session_state["regex"] = st.text_input(
             "Enter Regex or Search String", 
             value=st.session_state.get("regex", "")
@@ -20,7 +20,8 @@ def show_settings_dialog():
             value=st.session_state.get("submission_id", "")
         )
         st.session_state["regex_or_search"] = st.checkbox("Use as RegEx",value=st.session_state.get("regex_or_search", False), help="If not checked, it will be used as a search string")
-        
+        st.session_state["force_rerun"] = st.checkbox("Force Rerun",value=st.session_state.get("force_rerun", False), help="If checked, the karton data will be reloaded and reprocessed, rather than using the cached data")
+        st.session_state["system_prompt"] = st.text_area("System Prompt", value=st.session_state.get("system_prompt", ""))
         if st.form_submit_button("Save"):
             # TODO: Build validation here
             st.session_state["error"] = False
@@ -36,11 +37,16 @@ def main():
     if "submission_id" not in st.session_state:
         st.session_state["submission_id"] = ""
     if "regex_or_search" not in st.session_state:
-        st.session_state["regex_or_search"] = False    
+        st.session_state["regex_or_search"] = False
+    if "force_rerun" not in st.session_state:
+        st.session_state["force_rerun"] = False
+    if "system_prompt" not in st.session_state:
+        st.session_state["system_prompt"] = "You are an assistant for a malware researcher, you will be provided with information about the malware sample. The user can control what the data you receive will be. Please dont infer or guess information outside the provided data. IF YOU DONT RECEIVE ANY DATA, SAY SO AND DONT HALLUCINATE ANYTHING."
     if "error" not in st.session_state:
         st.session_state["error"] = False
     if "show_dialog" not in st.session_state:
         st.session_state["show_dialog"] = False
+    
     
     if not st.session_state["show_dialog"]:
         st.session_state["show_dialog"] = st.session_state["submission_id"] == "" or st.session_state["error"]
@@ -94,6 +100,7 @@ def _chatbot(user_input) -> str:
         "karton_submission_id": st.session_state["submission_id"],
         "regex_or_search": st.session_state["regex"],
         "use_regex": st.session_state["regex_or_search"],
+        "reprocess": st.session_state["force_rerun"],
     }
     response = requests.post("http://core:5000/process", data=form_data)
     
@@ -105,7 +112,7 @@ def _chatbot(user_input) -> str:
     else:
         return f"Error: {response.status_code}"
     
-    system_message = "You are an assistant for a malware researcher, you will be provided with information about the malware sample. The user can control what the data you receive will be. Please dont infer or guess informatin outside the provided data."
+    system_message = st.session_state["system_prompt"]
     user_input = f"{user_input} {' '.join(str(input_str) for input_str in karton_input_data)}"
     
     chat_response = requests.post("http://core:5000/chat", data={"system_message": system_message, "user_message": user_input})
