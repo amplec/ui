@@ -140,12 +140,17 @@ def _chatbot(user_input) -> str:
     :return: The response from the chatbot
     """
     
+    submission_id = _find_submission_id(user_input)
+    if not submission_id:
+        st.warning("No submission ID found in the prompt, using the submission ID from the settings.")
+        submission_id = st.session_state["submission_id"]
+    if not _check_for_validity_of_uuid(submission_id):
+        st.error("Could not answer because neither submission ID was provided in the prompt nor the submission ID from the settings is valid.")
+        return "ERROR"
+    
     if not st.session_state["function_calling"]:
-        if not _check_for_validity_of_uuid(st.session_state["submission_id"]):
-            st.error("The submission ID is not valid, please provide a valid submission ID in the settings.")
-            return "ERROR"
         form_data = {
-            "karton_submission_id": st.session_state["submission_id"],
+            "karton_submission_id": submission_id,
             "regex_or_search": st.session_state["regex"],
             "use_regex": st.session_state["regex_or_search"],
             "reprocess": st.session_state["force_rerun"],
