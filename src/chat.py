@@ -28,6 +28,18 @@ def show_settings_dialog():
         st.rerun()
 
     with st.form("settings_form"):
+        model_options = ["llama3.2:3b", "llama3.1:8b", "gpt4o", "gpt4o-mini"]
+        st.session_state["model"] = st.selectbox(
+            label="Select Model",
+            options=model_options,
+            index=model_options.index(st.session_state["model"]),
+            help="Choose a model for processing. 'gpt4o' and 'gpt4o-mini' require an API key."
+        )
+        st.session_state["api_key"] = st.text_input(
+            "Enter API Key",
+            value=st.session_state["api_key"],
+            type="password"
+        )
         st.session_state["regex"] = st.text_input(
             "Enter Regex or Search String",
             value=st.session_state["regex"],
@@ -72,6 +84,10 @@ def show_settings_dialog():
             st.rerun()
     
 def main():
+    if "api_key" not in st.session_state:
+        st.session_state["api_key"] = ""
+    if "model" not in st.session_state:
+        st.session_state["model"] = "llama3.2:3b"
     if "regex" not in st.session_state:
         st.session_state["regex"] = ""
     if "submission_id" not in st.session_state:
@@ -169,7 +185,7 @@ def _chatbot(user_input) -> str:
     
     system_message = st.session_state["system_prompt"] if not st.session_state["function_calling"] else st.session_state["tool_system_prompt"]
     
-    dict_for_request = {"system_message": system_message, "user_message": user_input, "reprocess": st.session_state["force_rerun"], "function_calling": st.session_state["function_calling"]}
+    dict_for_request = {"system_message": system_message, "user_message": user_input, "reprocess": st.session_state["force_rerun"], "function_calling": st.session_state["function_calling"], "model": st.session_state["model"], "api_key": st.session_state["api_key"]}
     
     if st.session_state["function_calling"]:
         if not _find_submission_id(user_input):
