@@ -28,12 +28,12 @@ def show_settings_dialog():
         st.rerun()
 
     with st.form("settings_form"):
-        model_options = ["llama3.2:3b", "llama3.1:8b", "gpt4o", "gpt4o-mini"]
+        model_options = ["llama3.2:3b", "llama3.1:8b", "gpt-4o", "gpt-4o-mini"]
         st.session_state["model"] = st.selectbox(
             label="Select Model",
             options=model_options,
             index=model_options.index(st.session_state["model"]),
-            help="Choose a model for processing. 'gpt4o' and 'gpt4o-mini' require an API key."
+            help="Choose a model for processing. 'gpt-4o' and 'gpt-4o-mini' require an API key."
         )
         st.session_state["api_key"] = st.text_input(
             "Enter API Key",
@@ -185,18 +185,8 @@ def _chatbot(user_input) -> str:
     
     system_message = st.session_state["system_prompt"] if not st.session_state["function_calling"] else st.session_state["tool_system_prompt"]
     
-    dict_for_request = {"system_message": system_message, "user_message": user_input, "reprocess": st.session_state["force_rerun"], "function_calling": st.session_state["function_calling"], "model": st.session_state["model"], "api_key": st.session_state["api_key"]}
-    
-    if st.session_state["function_calling"]:
-        if not _find_submission_id(user_input):
-            if _check_for_validity_of_uuid(st.session_state["submission_id"]):
-                st.warning("No submission ID found in the prompt, using the submission ID from the settings.")
-                dict_for_request["submission_id"] = st.session_state["submission_id"]
-            else:
-                st.error("Could not answer because neither submission ID was provided in the prompt nor the submission ID from the settings is valid.")
-                return "ERROR"
-        
-            
+    dict_for_request = {"system_message": system_message, "user_message": user_input, "reprocess": st.session_state["force_rerun"], "function_calling": st.session_state["function_calling"], "model": st.session_state["model"], "api_key": st.session_state["api_key"], "submission_id": submission_id}
+              
     chat_response = requests.post("http://core:5000/chat", data=dict_for_request)
     if chat_response.status_code == 200:
         try:
